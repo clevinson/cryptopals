@@ -20,6 +20,7 @@ library
   exposed-modules:     Lib
   build-depends:       base
                      , bytestring
+                     , containers
                      , hexstring
                      , base64-bytestring
                      , base16-bytestring
@@ -42,8 +43,11 @@ test-suite cryptopals-test
   main-is:             Spec.hs
   build-depends:       base
                      , cryptopals
+                     , containers
+                     , bytestring
                      , base64-bytestring
                      , binary
+                     , random-strings
                      , tasty
                      , tasty-hunit
   ghc-options:       -Wall -Werror -fno-warn-unused-do-bind -fwarn-tabs -fno-warn-name-shadowing
