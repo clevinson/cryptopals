@@ -8,7 +8,8 @@ import Lib
 
 import Data.Map.Strict (fromList)
 import Data.ByteString
---import Test.RandomStrings
+import Test.RandomStrings
+import Control.Monad (liftM)
 
 main :: IO ()
 main = defaultMain tests
@@ -46,12 +47,11 @@ tests = testGroup "Unit Tests" [
   testCase "singleCharXor (identity map)" $
     ((singleCharXor '!' (singleCharXor '!' "hello there")))
     @?= ("hello there" :: ByteString),
-  
+
   testCase "bestMatch (singleCharXor)" $
     bestMatch "abcdefg" (singleCharXor 'd' "what's up, dawg?")
-    @?= "what's up, dawg?"
+    @?= "what's up, dawg?",
 
-  --testCase "bestMatch (singleCharXor)" $
-  --  bestMatch (liftM (randomString randomChar8 200)) (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
-  --  @?= "what's up, dawg?"
+  testCaseInfo "bestMatch (cryptopals-3)" $
+    liftM (flip bestMatch (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")) (randomString randomChar 1000)
   ]

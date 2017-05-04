@@ -8,6 +8,7 @@ import qualified Data.ByteString.Base64 as B64 (encode)
 import qualified Data.ByteString.Base16 as B16 (decode)
 import qualified Data.Bits  as Bits (xor)
 import Data.List (sortOn)
+import Data.Char (toLower)
 import Data.Map.Strict (Map, fromList, fromListWith, mapMaybe, unionWith)
 
 -- Hex encoded bytestring
@@ -34,13 +35,16 @@ frequency str = mapMaybe freq hist
           len = length str
           freq cnt = Just $ (fromIntegral cnt) / (fromIntegral len)
 
+cleanString :: String -> String
+cleanString str = map toLower str
+
 englishCharFreq :: Map Char Float
-englishCharFreq = fromList [ ('a',8.167), ('b',1.492), ('c',2.782),
-  ('d',4.253), ('e',12.702), ('f',2.228), ('g',2.015), ('h',6.094),
-  ('i',6.966), ('j',0.153), ('k',0.772), ('l',4.025), ('m',2.406),
-  ('n',6.749), ('o',7.507), ('p',1.929), ('q',0.095), ('r',5.987),
-  ('s',6.327), ('t',9.056), ('u',2.758), ('v',0.978), ('w',2.360),
-  ('x',0.150), ('y',1.974), ('z',0.074) ]
+englishCharFreq = fromList [ ('a',0.8167), ('b',0.1492), ('c',0.2782),
+  ('d',0.4253), ('e',0.12702), ('f',0.2228), ('g',0.2015), ('h',0.6094),
+  ('i',0.6966), ('j',0.0153), ('k',0.0772), ('l',0.4025), ('m',0.2406),
+  ('n',0.6749), ('o',0.7507), ('p',0.1929), ('q',0.0095), ('r',0.5987),
+  ('s',0.6327), ('t',0.9056), ('u',0.2758), ('v',0.0978), ('w',0.2360),
+  ('x',0.0150), ('y',0.1974), ('z',0.0074), (' ',0.16)]
 
 
 similarMaps :: Map Char Float -> Map Char Float -> Float
@@ -57,7 +61,7 @@ data RatedString = RatedString String Float
 xorAndRate :: Char -> B.ByteString -> RatedString
 xorAndRate chr str = RatedString decodedStr rating
     where decodedStr = C.unpack $ singleCharXor chr str
-          rating = similarMaps (frequency decodedStr) englishCharFreq
+          rating = similarMaps (frequency (cleanString decodedStr)) englishCharFreq
 
 rankXors :: [Char] -> B.ByteString -> [RatedString]
 rankXors chars str = sortOn getRating unsortedXors
@@ -65,6 +69,8 @@ rankXors chars str = sortOn getRating unsortedXors
           getRating (RatedString _ flt) = flt
 
 bestMatch :: [Char] -> B.ByteString -> String
-bestMatch chars str = getStr ((rankXors chars str) !! 0)
+bestMatch chars str = getStr ((rankXors (rmdups chars) str) !! 0)
     where getStr (RatedString str _) = str
-
+          rmdups (x:xs)   | x `elem` xs   = rmdups xs
+                          | otherwise     = x : rmdups xs
+          rmdups [] = []
