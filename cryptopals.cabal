@@ -24,6 +24,7 @@ library
                      , hexstring
                      , base64-bytestring
                      , base16-bytestring
+                     , random-strings
 
 executable cryptopals
   hs-source-dirs:      src

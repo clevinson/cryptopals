@@ -4,12 +4,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Lib
---import qualified Data.Binary as Bin
 
 import Data.Map.Strict (fromList)
 import Data.ByteString
-import Test.RandomStrings
-import Control.Monad (liftM)
 
 main :: IO ()
 main = defaultMain tests
@@ -49,9 +46,10 @@ tests = testGroup "Unit Tests" [
     @?= ("hello there" :: ByteString),
 
   testCase "bestMatch (singleCharXor)" $
-    bestMatch "abcdefg" (singleCharXor 'd' "what's up, dawg?")
-    @?= "what's up, dawg?",
+    (rankXors "abcdefghijklmnopqrstuvwxyz" (singleCharXor 'd' "what's up, dawg?")) !! 0
+    @?= RatedString "what's up, dawg?" 2.087381,
 
-  testCaseInfo "bestMatch (cryptopals-3)" $
-    liftM (flip bestMatch (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")) (randomString randomChar 1000)
+  testCaseInfo "decryptSCXor (cryptopals-3)" $
+    decryptSCXor
+      (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
   ]

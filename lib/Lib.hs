@@ -11,6 +11,9 @@ import Data.List (sortOn)
 import Data.Char (toLower)
 import Data.Map.Strict (Map, fromList, fromListWith, mapMaybe, unionWith)
 
+import Control.Monad (liftM)
+import Test.RandomStrings
+
 -- Hex encoded bytestring
 type Hex = B.ByteString
 
@@ -35,16 +38,13 @@ frequency str = mapMaybe freq hist
           len = length str
           freq cnt = Just $ (fromIntegral cnt) / (fromIntegral len)
 
-cleanString :: String -> String
-cleanString str = map toLower str
-
 englishCharFreq :: Map Char Float
 englishCharFreq = fromList [ ('a',0.8167), ('b',0.1492), ('c',0.2782),
   ('d',0.4253), ('e',0.12702), ('f',0.2228), ('g',0.2015), ('h',0.6094),
   ('i',0.6966), ('j',0.0153), ('k',0.0772), ('l',0.4025), ('m',0.2406),
   ('n',0.6749), ('o',0.7507), ('p',0.1929), ('q',0.0095), ('r',0.5987),
   ('s',0.6327), ('t',0.9056), ('u',0.2758), ('v',0.0978), ('w',0.2360),
-  ('x',0.0150), ('y',0.1974), ('z',0.0074), (' ',0.16)]
+  ('x',0.0150), ('y',0.1974), ('z',0.0074), (' ',0.18)]
 
 
 similarMaps :: Map Char Float -> Map Char Float -> Float
@@ -56,21 +56,38 @@ singleCharXor :: Char -> B.ByteString -> B.ByteString
 singleCharXor chr str = xor ((C.replicate (B.length str) chr) :: B.ByteString) str
 
 data RatedString = RatedString String Float
-  deriving (Show)
+  deriving (Show, Eq)
 
 xorAndRate :: Char -> B.ByteString -> RatedString
 xorAndRate chr str = RatedString decodedStr rating
     where decodedStr = C.unpack $ singleCharXor chr str
           rating = similarMaps (frequency (cleanString decodedStr)) englishCharFreq
+          cleanString str = map toLower str
 
 rankXors :: [Char] -> B.ByteString -> [RatedString]
-rankXors chars str = sortOn getRating unsortedXors
+rankXors chars str = sortByRating unsortedXors
     where unsortedXors = map (flip xorAndRate str) chars
-          getRating (RatedString _ flt) = flt
 
-bestMatch :: [Char] -> B.ByteString -> String
-bestMatch chars str = getStr ((rankXors (rmdups chars) str) !! 0)
-    where getStr (RatedString str _) = str
-          rmdups (x:xs)   | x `elem` xs   = rmdups xs
+sortByRating :: [RatedString] -> [RatedString]
+sortByRating strings = sortOn getRating strings
+    where getRating (RatedString _ flt) = flt
+
+randomSCXor :: B.ByteString -> IO [RatedString]
+randomSCXor bytes =
+  liftM (flip rankXors bytes) (liftM rmdups $ randomString randomChar 1000)
+    where rmdups (x:xs)   | x `elem` xs   = rmdups xs
                           | otherwise     = x : rmdups xs
           rmdups [] = []
+
+decryptSCXor :: B.ByteString -> IO String
+decryptSCXor bytes = do ratedStrings <- (randomSCXor bytes)
+                        return $ getStr (ratedStrings !! 0)
+    where getStr (RatedString str _) = str
+
+loadCyphertexts :: FilePath -> IO [B.ByteString]
+loadCyphertexts path = do contents <- C.readFile path
+                          return $ C.split '\n' contents
+
+decryptCyphertexts :: [B.ByteString] -> IO [RatedString]
+decryptCyphertexts texts = do ratedStringLists <- mapM (randomSCXor . decodeHex) texts
+                              return $ map (!! 0) ratedStringLists
