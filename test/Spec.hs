@@ -23,10 +23,7 @@ tests = testGroup "Unit Tests" [
       (decodeHex "686974207468652062756c6c277320657965")
     @?= (decodeHex "746865206b696420646f6e277420706c6179"),
 
-  testCase "histogram" $
-    histogram "foobar" @?= fromList [('f',1), ('o',2), ('b',1), ('a',1), ('r',1)],
-
-  testCase "histogram" $
+  testCase "frequency" $
     frequency "fooba" @?= fromList [('f',0.2), ('o',0.4), ('b',0.2), ('a',0.2)],
 
   testCase "similarMaps" $
@@ -45,11 +42,13 @@ tests = testGroup "Unit Tests" [
     ((singleCharXor '!' (singleCharXor '!' "hello there")))
     @?= ("hello there" :: ByteString),
 
-  testCase "bestMatch (singleCharXor)" $
-    (rankXors "abcdefghijklmnopqrstuvwxyz" (singleCharXor 'd' "what's up, dawg?")) !! 0
-    @?= RatedString "what's up, dawg?" 2.087381,
-
-  testCaseInfo "decryptSCXor (cryptopals-3)" $
+  testCaseInfo "http://cryptopals.com/sets/1/challenges/3 (decryptSCXor)" $
     decryptSCXor
-      (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
+      (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"),
+
+  testCase "http://cryptopals.com/sets/1/challenges/5 (repeatedKeyXor)" $
+    repeatedKeyXor
+      ("ICE" :: ByteString)
+      "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
+    @?= (decodeHex "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")
   ]

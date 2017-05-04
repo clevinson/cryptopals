@@ -53,7 +53,17 @@ similarMaps ref test = sqrt $ foldr (+) 0 mapOfSquareDiffs
           diff r t = (r - t)
 
 singleCharXor :: Char -> B.ByteString -> B.ByteString
-singleCharXor chr str = xor ((C.replicate (B.length str) chr) :: B.ByteString) str
+singleCharXor chr str = repeatedKeyXor (C.pack [chr]) str
+
+repeatedKeyXor :: B.ByteString -> B.ByteString -> B.ByteString
+repeatedKeyXor key bytes = xor repeatedKey bytes
+    where keyLength = B.length key
+          keyStr = B.unpack key
+          bLength = B.length bytes
+          numKeys = div bLength keyLength
+          remainder = mod bLength keyLength
+          repeatedKey = B.pack $ concat (replicate numKeys keyStr) ++
+            (take remainder keyStr)
 
 data RatedString = RatedString String Float
   deriving (Show, Eq)
@@ -91,3 +101,5 @@ loadCyphertexts path = do contents <- C.readFile path
 decryptCyphertexts :: [B.ByteString] -> IO [RatedString]
 decryptCyphertexts texts = do ratedStringLists <- mapM (randomSCXor . decodeHex) texts
                               return $ map (!! 0) ratedStringLists
+
+
